@@ -161,9 +161,9 @@ const temValor = (v) => Boolean(v !== null && v !== undefined && String(v).trim(
  */
 export function pendenciasPagamento(r) {
   const falta = []
+  // PF OU CNPJ já basta (definir um não exige o outro)
   if (!(temValor(r.empresa) || temValor(r.cnpj_cpf))) falta.push('PF/CNPJ')
   if (!temValor(r.data_vencimento)) falta.push('data de pagamento')
-  if (!temValor(r.forma_pagamento)) falta.push('forma de pagamento')
   return falta
 }
 

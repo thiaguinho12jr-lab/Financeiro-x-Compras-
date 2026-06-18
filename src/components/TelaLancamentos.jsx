@@ -16,6 +16,7 @@ import { montarSugestoes } from '../lib/opcoes.js'
 import Filters from './Filters.jsx'
 import PeriodFilter from './PeriodFilter.jsx'
 import FiltrosAvancados from './FiltrosAvancados.jsx'
+import StatusTabs from './StatusTabs.jsx'
 import SummaryCards from './SummaryCards.jsx'
 import StatusBadge from './StatusBadge.jsx'
 import LancamentoModal from './LancamentoModal.jsx'
@@ -272,6 +273,10 @@ export default function TelaLancamentos({
         mesAtivo={filtroMes}
         aoSelecionarMes={setFiltroMes}
       />
+
+      {statusWorkflow && (
+        <StatusTabs filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} resumo={resumo} />
+      )}
 
       <FiltrosAvancados
         rotuloResponsavel="Responsável"
