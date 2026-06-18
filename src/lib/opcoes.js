@@ -74,18 +74,46 @@ export const LISTAS = {
   local_entrega: [],
 }
 
+// Remove códigos/números no INÍCIO do texto (ex.: "272 - ", "2x -134 - ",
+// "73 - 6x - "), preservando números no meio/fim do nome.
+function limparPrefixoNumerico(v) {
+  const limpo = v.replace(/^[\s\d.xX×\-–—]+/, '').trim()
+  return limpo || v.trim()
+}
+
+// Padroniza "Cidade - UF" para remover duplicidades por espaçamento/maiúsculas
+// (ex.: "Osasco -SP", "Osasco- SP", "Salvador - Ba", "Lauro de Freitas / BA").
+function normalizarCidadeEstado(v) {
+  const s = v.trim().replace(/\s+/g, ' ')
+  const m = s.match(/^(.*?)\s*[-/]\s*([A-Za-zÀ-ú]{2})\s*$/)
+  if (m) return `${m[1].trim()} - ${m[2].toUpperCase()}`
+  return s
+}
+
+const NORMALIZADORES = {
+  centro_custo: limparPrefixoNumerico,
+  setor_custo: limparPrefixoNumerico,
+  cidade_estado: normalizarCidadeEstado,
+}
+
 /**
  * Monta a lista de sugestões de um campo: junta a lista curada (LISTAS)
- * com os valores já existentes nos registros, sem repetir, ordenado.
+ * com os valores já existentes nos registros, aplica limpeza/normalização
+ * quando houver, remove repetidos e ordena.
  */
 export function montarSugestoes(nomeCampo, registros) {
   const set = new Set()
-  for (const v of LISTAS[nomeCampo] ?? []) {
-    if (v && String(v).trim()) set.add(String(v).trim())
+  const norm = NORMALIZADORES[nomeCampo]
+  const adicionar = (bruto) => {
+    if (bruto === null || bruto === undefined) return
+    let s = String(bruto).trim()
+    if (!s || s === '-') return
+    if (norm) s = norm(s)
+    if (s) set.add(s)
   }
-  for (const r of registros ?? []) {
-    const v = r[nomeCampo]
-    if (v !== null && v !== undefined && String(v).trim()) set.add(String(v).trim())
-  }
+
+  for (const v of LISTAS[nomeCampo] ?? []) adicionar(v)
+  for (const r of registros ?? []) adicionar(r[nomeCampo])
+
   return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'))
 }

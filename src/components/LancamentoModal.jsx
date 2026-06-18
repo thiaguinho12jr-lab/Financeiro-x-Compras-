@@ -50,7 +50,19 @@ export default function LancamentoModal({
   if (!aberto) return null
 
   function definir(nome, valor) {
-    setValores((v) => ({ ...v, [nome]: valor }))
+    setValores((v) => {
+      const novo = { ...v, [nome]: valor }
+      // Cálculo automático: valor_total = (unitário × quantidade) + frete
+      if (['quantidade', 'valor_unitario', 'frete'].includes(nome)) {
+        const q = parseFloat(novo.quantidade)
+        const u = parseFloat(novo.valor_unitario)
+        const f = parseFloat(novo.frete) || 0
+        if (!Number.isNaN(q) && !Number.isNaN(u)) {
+          novo.valor_total = Number((u * q + f).toFixed(2))
+        }
+      }
+      return novo
+    })
   }
 
   function validar() {

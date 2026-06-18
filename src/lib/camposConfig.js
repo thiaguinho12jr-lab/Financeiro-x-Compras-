@@ -4,7 +4,7 @@
 // Colunas condensadas: cada uma mostra um valor principal + um subtexto,
 // para caber tudo na tela sem rolar.
 export const COLUNAS_SOLICITACOES = [
-  { chave: 'data', rotulo: 'Data', tipo: 'data', sub: 'data_vencimento', subTipo: 'data', subRotulo: 'pgto.' },
+  { chave: 'data', rotulo: 'Data', tipo: 'data', sub: 'data_vencimento', subTipo: 'data', subRotulo: 'Pagar em' },
   { chave: 'produto', rotulo: 'Produto', sub: 'fornecedor', className: 'min-w-[12rem] max-w-[20rem]' },
   { chave: 'valor_total', rotulo: 'Valor', tipo: 'moeda', sub: 'forma_pagamento' },
   { chave: 'empresa', rotulo: 'Responsável', sub: 'cnpj_cpf', className: 'max-w-[12rem]' },
@@ -24,7 +24,7 @@ export const CAMPOS_SOLICITACOES = [
   { nome: 'fornecedor', rotulo: 'Fornecedor', tipo: 'datalist' },
   { nome: 'cidade_estado', rotulo: 'Cidade/Estado', tipo: 'datalist' },
   { nome: 'forma_pagamento', rotulo: 'Forma de pagamento', tipo: 'datalist' },
-  { nome: 'empresa', rotulo: 'Responsável pelo pagamento', tipo: 'datalist' },
+  { nome: 'empresa', rotulo: 'Pago por (PF/CNPJ)', tipo: 'datalist' },
   { nome: 'cnpj_cpf', rotulo: 'CNPJ/CPF (NF)', tipo: 'datalist' },
   { nome: 'data_vencimento', rotulo: 'Data de pagamento', tipo: 'date' },
   { nome: 'status', rotulo: 'Status', tipo: 'select' },
@@ -49,6 +49,6 @@ export const CAMPOS_FUNDO = [
   { nome: 'local_entrega', rotulo: 'Local de entrega', tipo: 'datalist' },
   { nome: 'fornecedor', rotulo: 'Fornecedor', tipo: 'datalist' },
   { nome: 'forma_pagamento', rotulo: 'Forma de pagamento', tipo: 'datalist' },
-  { nome: 'conta_pagamento', rotulo: 'Conta/Responsável pelo pagamento', tipo: 'datalist' },
+  { nome: 'conta_pagamento', rotulo: 'Pago por (PF/CNPJ)', tipo: 'datalist' },
   { nome: 'nf', rotulo: 'NF' },
 ]
