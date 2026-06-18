@@ -134,7 +134,7 @@ export default function Painel() {
 
   // Mensagem 1: resumo completo
   function msgResumo() {
-    const nome = perfil?.nome?.trim() || perfil?.email || 'Equipe de Compras'
+    const nome = perfil?.nome?.trim() || 'Equipe de Compras'
     const pend = porStatus.pendente
     const totalValor = pend.reduce((s, r) => s + (Number(r.valor_total) || 0), 0)
     const faltam = pend.filter((r) => !pedidoCompleto(r))

@@ -46,12 +46,22 @@ export default function Usuarios() {
     }
   }
 
+  function mudarNomeLocal(id, nome) {
+    setPerfis((lista) => lista.map((p) => (p.id === id ? { ...p, nome } : p)))
+  }
+
+  async function salvarNome(id, nome) {
+    const { error } = await supabase.from('profiles').update({ nome: nome.trim() }).eq('id', id)
+    if (error) setErro('Não foi possível salvar o nome: ' + error.message)
+  }
+
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold text-slate-800">Gerenciar usuários</h2>
         <p className="text-sm text-slate-500">
-          Defina o papel de cada pessoa. As permissões valem imediatamente.
+          Defina o <strong>nome</strong> e o <strong>papel</strong> de cada pessoa. As alterações
+          valem imediatamente. O nome aparece nos avisos do WhatsApp.
         </p>
       </div>
 
@@ -107,13 +117,21 @@ export default function Usuarios() {
               ) : (
                 perfis.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-2.5 font-medium text-slate-800">
-                      {p.nome?.trim() || '—'}
-                      {p.id === usuario?.id && (
-                        <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
-                          você
-                        </span>
-                      )}
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={p.nome ?? ''}
+                          onChange={(e) => mudarNomeLocal(p.id, e.target.value)}
+                          onBlur={(e) => salvarNome(p.id, e.target.value)}
+                          placeholder="Nome da pessoa"
+                          className="w-44 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-marca-600 focus:ring-2 focus:ring-marca-100"
+                        />
+                        {p.id === usuario?.id && (
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+                            você
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-2.5 text-slate-600">{p.email}</td>
                     <td className="px-4 py-2.5">
