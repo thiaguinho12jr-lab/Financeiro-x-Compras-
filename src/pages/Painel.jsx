@@ -5,11 +5,13 @@ import { useAuth } from '../context/AuthContext.jsx'
 import {
   formatarMoeda,
   formatarData,
+  hojeISO,
   grupoStatus,
   situacaoVencimento,
   pendenciasPagamento,
   pedidoCompleto,
 } from '../lib/format.js'
+import { linkWhatsApp } from '../lib/whatsapp.js'
 import { montarSugestoes } from '../lib/opcoes.js'
 import { CAMPOS_SOLICITACOES } from '../lib/camposConfig.js'
 import StatusBadge from '../components/StatusBadge.jsx'
@@ -51,7 +53,7 @@ const ABAS = [
 export default function Painel() {
   const sol = useRealtimeTable('solicitacoes')
   const fun = useRealtimeTable('fundo_caixa')
-  const { podeEditar } = useAuth()
+  const { podeEditar, perfil } = useAuth()
 
   const [aba, setAba] = useState('pendente')
   const [emEdicao, setEmEdicao] = useState(null)
@@ -126,17 +128,62 @@ export default function Painel() {
     setModalAberto(true)
   }
 
+  function avisarWhatsApp() {
+    const nome = perfil?.nome?.trim() || perfil?.email || 'Equipe de Compras'
+    const pend = porStatus.pendente
+    const totalValor = pend.reduce((s, r) => s + (Number(r.valor_total) || 0), 0)
+    const faltam = pend.filter((r) => !pedidoCompleto(r))
+    const faltamValor = faltam.reduce((s, r) => s + (Number(r.valor_total) || 0), 0)
+    const prontos = pend.length - faltam.length
+
+    const l = []
+    l.push('*💰 Financeiro · Compras*')
+    l.push('')
+    l.push(`Olá! *${nome}* atualizou os pagamentos (${formatarData(hojeISO())}).`)
+    l.push('')
+    l.push('📊 *Resumo dos pendentes*')
+    l.push(`• Total a pagar: *${formatarMoeda(totalValor)}* (${pend.length} pedido(s))`)
+    l.push(`• ✅ Prontos para pagar: ${prontos} (${formatarMoeda(totalValor - faltamValor)})`)
+    l.push(`• ⏳ Falta definir: ${faltam.length} (${formatarMoeda(faltamValor)})`)
+
+    if (faltam.length) {
+      l.push('')
+      l.push('⚠️ *Precisam de definição* (PF/CNPJ e data de pagamento):')
+      faltam.slice(0, 10).forEach((r) => {
+        l.push(
+          `• ${r.produto || 'Pedido'} — ${formatarMoeda(r.valor_total)} _(falta: ${pendenciasPagamento(r).join(', ')})_`,
+        )
+      })
+      if (faltam.length > 10) l.push(`• ...e mais ${faltam.length - 10} pedido(s)`)
+    }
+
+    l.push('')
+    l.push('Podem revisar e dar andamento, por favor? 🙏')
+
+    window.open(linkWhatsApp(l.join('\n')), '_blank', 'noopener')
+  }
+
   if (carregando) {
     return <p className="py-10 text-center text-slate-400">Carregando visão geral...</p>
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-slate-800">Visão geral</h2>
-        <p className="text-sm text-slate-500">
-          Tudo o que está pendente, enviado e pago — Solicitações e Fundo de Caixa juntos.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Visão geral</h2>
+          <p className="text-sm text-slate-500">
+            Tudo o que está pendente, enviado e pago — Solicitações e Fundo de Caixa juntos.
+          </p>
+        </div>
+        {podeEditar && (
+          <button
+            onClick={avisarWhatsApp}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600 active:scale-95"
+          >
+            <span className="text-base leading-none">📲</span> Avisar no WhatsApp
+          </button>
+        )}
       </div>
 
       {/* Indicadores principais */}
