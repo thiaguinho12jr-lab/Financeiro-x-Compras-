@@ -152,3 +152,22 @@ export function grupoStatus(status) {
   if (status === 'Reembolsado') return 'reembolsado'
   return 'pendente'
 }
+
+const temValor = (v) => Boolean(v !== null && v !== undefined && String(v).trim())
+
+/**
+ * O que o financeiro ainda precisa preencher num pedido para liberar o pagamento.
+ * Retorna um array de rótulos do que falta (vazio = está completo).
+ */
+export function pendenciasPagamento(r) {
+  const falta = []
+  if (!(temValor(r.empresa) || temValor(r.cnpj_cpf))) falta.push('PF/CNPJ')
+  if (!temValor(r.data_vencimento)) falta.push('data de pagamento')
+  if (!temValor(r.forma_pagamento)) falta.push('forma de pagamento')
+  return falta
+}
+
+/** Um pedido está completo (pronto para enviar) quando não falta nada. */
+export function pedidoCompleto(r) {
+  return pendenciasPagamento(r).length === 0
+}

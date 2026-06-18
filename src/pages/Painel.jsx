@@ -7,6 +7,8 @@ import {
   formatarData,
   grupoStatus,
   situacaoVencimento,
+  pendenciasPagamento,
+  pedidoCompleto,
 } from '../lib/format.js'
 import { montarSugestoes } from '../lib/opcoes.js'
 import { CAMPOS_SOLICITACOES } from '../lib/camposConfig.js'
@@ -28,13 +30,6 @@ function resumirPorStatus(registros) {
     r.geral.total += v
   }
   return r
-}
-
-/** Um pedido está "pronto para pagar" quando já tem responsável e forma de pagamento. */
-function prontoParaPagar(r) {
-  const temResp = r.empresa && String(r.empresa).trim()
-  const temForma = r.forma_pagamento && String(r.forma_pagamento).trim()
-  return Boolean(temResp && temForma)
 }
 
 function Cartao({ titulo, valor, detalhe, cor, anel }) {
@@ -98,7 +93,7 @@ export default function Painel() {
     const falta = { qtd: 0, total: 0 }
     for (const r of porStatus.pendente) {
       const v = Number(r.valor_total) || 0
-      if (prontoParaPagar(r)) {
+      if (pedidoCompleto(r)) {
         def.qtd += 1
         def.total += v
       } else {
@@ -114,8 +109,8 @@ export default function Painel() {
     const arr = [...porStatus[aba]]
     if (aba === 'pendente') {
       arr.sort((a, b) => {
-        const pa = prontoParaPagar(a) ? 1 : 0
-        const pb = prontoParaPagar(b) ? 1 : 0
+        const pa = pedidoCompleto(a) ? 1 : 0
+        const pb = pedidoCompleto(b) ? 1 : 0
         if (pa !== pb) return pa - pb
         return (a.data_vencimento || a.data || '').localeCompare(b.data_vencimento || b.data || '')
       })
@@ -211,6 +206,14 @@ export default function Painel() {
           </Link>
         </div>
 
+        {/* Legenda dos status */}
+        <div className="mb-3 grid grid-cols-1 gap-1 rounded-lg bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-2">
+          <span><strong className="text-amber-600">● Pendente</strong> — falta informar (data de pagamento, PF/CNPJ).</span>
+          <span><strong className="text-blue-600">● Enviado</strong> — já foi enviado para o pagamento.</span>
+          <span><strong className="text-emerald-600">● Pago</strong> — o pedido foi pago.</span>
+          <span><strong className="text-violet-600">● Reembolsado</strong> — devolvido ou teve complicação.</span>
+        </div>
+
         {/* Abas de status */}
         <div className="mb-3 flex flex-wrap gap-2">
           {ABAS.map((a) => {
@@ -273,10 +276,11 @@ export default function Painel() {
   )
 }
 
-/** Item de pedido com fornecedor, valor e PF/CNPJ bem visíveis. */
+/** Item de pedido com fornecedor, valor, PF/CNPJ e data bem visíveis + o que falta. */
 function PedidoItem({ r, aba, podeEditar, onClick }) {
   const linha = situacaoVencimento(r.status, r.data_vencimento).classeLinha
-  const pronto = prontoParaPagar(r)
+  const falta = pendenciasPagamento(r)
+  const pronto = falta.length === 0
   const Tag = podeEditar ? 'button' : 'div'
 
   function Campo({ rotulo, children, alerta }) {
@@ -308,15 +312,20 @@ function PedidoItem({ r, aba, podeEditar, onClick }) {
       </div>
 
       {/* Informações principais bem visíveis */}
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
         <Campo rotulo="Fornecedor">{r.fornecedor || '—'}</Campo>
-        <Campo rotulo="Pagar a (PF)" alerta={!r.empresa}>
-          {r.empresa || 'definir responsável'}
+        <Campo rotulo="Pagar a (PF)" alerta={!r.empresa && !r.cnpj_cpf}>
+          {r.empresa || (r.cnpj_cpf ? '—' : 'definir')}
         </Campo>
-        <Campo rotulo="CNPJ / CPF">{r.cnpj_cpf || '—'}</Campo>
+        <Campo rotulo="CNPJ / CPF" alerta={!r.empresa && !r.cnpj_cpf}>
+          {r.cnpj_cpf || (r.empresa ? '—' : 'definir')}
+        </Campo>
+        <Campo rotulo="Data de pagamento" alerta={!r.data_vencimento}>
+          {r.data_vencimento ? formatarData(r.data_vencimento) : 'definir'}
+        </Campo>
       </div>
 
-      {/* Rodapé: status, forma e marcador de definição */}
+      {/* Rodapé: status + o que falta */}
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
         <StatusBadge status={r.status} dataVencimento={r.data_vencimento} />
         {r.forma_pagamento && (
@@ -324,18 +333,15 @@ function PedidoItem({ r, aba, podeEditar, onClick }) {
             {r.forma_pagamento}
           </span>
         )}
-        {r.data_vencimento && (
-          <span className="text-xs text-slate-400">vence {formatarData(r.data_vencimento)}</span>
-        )}
         {aba === 'pendente' && (
           <span className="ml-auto">
             {pronto ? (
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                ✓ pronto p/ pagar
+                ✓ pronto para enviar
               </span>
             ) : (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-                definir
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+                Falta: {falta.join(' · ')}
               </span>
             )}
           </span>
