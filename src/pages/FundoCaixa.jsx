@@ -9,6 +9,7 @@ export default function FundoCaixa() {
       colunas={COLUNAS_FUNDO}
       campos={CAMPOS_FUNDO}
       statusWorkflow={false}
+      campoResponsavel="conta_pagamento"
     />
   )
 }

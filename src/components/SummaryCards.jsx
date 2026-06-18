@@ -28,10 +28,11 @@ function Cartao({ titulo, valor, detalhe, cor, ativo, onClick, anelAtivo, clicav
 
 /**
  * @param {{
- *   totalGasto:number, qtdPendentes:number, qtdEnviados:number, qtdPagos:number, qtdTotal:number,
- *   statusAtivo:string,            // '' | 'pendente' | 'enviado' | 'pago'
- *   aoSelecionarStatus:Function,   // recebe a chave do status (ou '' para todos)
- *   modoSimples?:boolean,          // true = só mostra o total (ex.: Fundo de Caixa)
+ *   totalGasto:number, qtdPendentes:number, qtdEnviados:number, qtdPagos:number,
+ *   qtdReembolsados:number, qtdTotal:number,
+ *   statusAtivo:string,            // '' | 'pendente' | 'enviado' | 'pago' | 'reembolsado'
+ *   aoSelecionarStatus:Function,
+ *   modoSimples?:boolean,
  * }} props
  */
 export default function SummaryCards({
@@ -39,6 +40,7 @@ export default function SummaryCards({
   qtdPendentes,
   qtdEnviados,
   qtdPagos,
+  qtdReembolsados,
   qtdTotal,
   statusAtivo,
   aoSelecionarStatus,
@@ -70,11 +72,11 @@ export default function SummaryCards({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <Cartao
-        titulo="Total no período"
+        titulo="Total gasto"
         valor={formatarMoeda(totalGasto)}
-        detalhe={`${qtdTotal} lançamento${qtdTotal === 1 ? '' : 's'} · ver todos`}
+        detalhe={`${qtdTotal} itens · exceto reembolsados`}
         cor="text-slate-800"
         clicavel
         ativo={statusAtivo === ''}
@@ -110,6 +112,16 @@ export default function SummaryCards({
         ativo={statusAtivo === 'pago'}
         anelAtivo="border-emerald-300 ring-emerald-200"
         onClick={() => alternar('pago')}
+      />
+      <Cartao
+        titulo="Reembolsados"
+        valor={qtdReembolsados}
+        detalhe="não contam no gasto"
+        cor="text-violet-600"
+        clicavel
+        ativo={statusAtivo === 'reembolsado'}
+        anelAtivo="border-violet-300 ring-violet-200"
+        onClick={() => alternar('reembolsado')}
       />
     </div>
   )

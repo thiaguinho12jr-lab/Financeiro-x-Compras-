@@ -118,6 +118,15 @@ export function situacaoVencimento(status, dataVencimentoISO) {
     }
   }
 
+  if (status === 'Reembolsado') {
+    return {
+      chave: 'reembolsado',
+      rotulo: 'Reembolsado',
+      classeBadge: 'bg-violet-100 text-violet-800 ring-1 ring-violet-200',
+      classeLinha: 'bg-violet-50/40',
+    }
+  }
+
   // Pendente
   const dias = diasAteVencimento(dataVencimentoISO)
   const venceu = dias !== null && dias < 0
@@ -131,14 +140,15 @@ export function situacaoVencimento(status, dataVencimentoISO) {
   }
 }
 
-export const OPCOES_STATUS = ['Pendente', 'Enviado', 'Pago']
+export const OPCOES_STATUS = ['Pendente', 'Enviado', 'Pago', 'Reembolsado']
 
 /**
- * Agrupa um registro em uma das três famílias de status usadas nos
- * filtros e cartões: 'pago', 'enviado' ou 'pendente'.
+ * Agrupa um registro em uma das famílias de status usadas nos
+ * filtros e cartões: 'pago', 'enviado', 'reembolsado' ou 'pendente'.
  */
 export function grupoStatus(status) {
   if (status === 'Pago') return 'pago'
   if (status === 'Enviado') return 'enviado'
+  if (status === 'Reembolsado') return 'reembolsado'
   return 'pendente'
 }
