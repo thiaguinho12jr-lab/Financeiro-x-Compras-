@@ -392,7 +392,8 @@ export default function TelaLancamentos({
                 return (
                   <div
                     key={r.id}
-                    className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${s.classeLinha} ${r.prioridade ? 'border-l-4 border-l-red-500' : ''}`}
+                    onClick={() => podeEditar && abrirEdicao(r)}
+                    className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${s.classeLinha} ${r.prioridade ? 'border-l-4 border-l-red-500' : ''} ${podeEditar ? 'cursor-pointer active:scale-[0.99]' : ''}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -425,6 +426,7 @@ export default function TelaLancamentos({
                         {statusWorkflow && (
                           <select
                             value={r.status}
+                            onClick={(e) => e.stopPropagation()}
                             onChange={(e) => mudarStatus(r, e.target.value)}
                             className="flex-1 rounded-md border border-slate-200 bg-white px-2 py-2 text-xs font-medium outline-none focus:border-marca-600"
                           >
@@ -436,15 +438,21 @@ export default function TelaLancamentos({
                           </select>
                         )}
                         <button
-                          onClick={() => abrirEdicao(r)}
-                          className="rounded px-3 py-2 text-xs font-medium text-marca-700 hover:bg-marca-50 active:scale-95"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            abrirEdicao(r)
+                          }}
+                          className="rounded-lg bg-marca-50 px-3 py-2 text-xs font-semibold text-marca-700 hover:bg-marca-100 active:scale-95"
                         >
                           Editar
                         </button>
                         {ehAdmin && (
                           <button
-                            onClick={() => excluir(r)}
-                            className="rounded px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 active:scale-95"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              excluir(r)
+                            }}
+                            className="rounded-lg px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 active:scale-95"
                           >
                             Excluir
                           </button>
@@ -522,32 +530,43 @@ function FragmentoGrupo({
       </tr>
       {grupo.rows.map((r) => {
         const s = situacaoVencimento(r.status, r.data_vencimento)
+        const corSel =
+          {
+            pendente: 'border-amber-300 bg-amber-50 text-amber-800',
+            enviado: 'border-blue-300 bg-blue-50 text-blue-800',
+            pago: 'border-emerald-300 bg-emerald-50 text-emerald-800',
+            reembolsado: 'border-violet-300 bg-violet-50 text-violet-800',
+          }[grupoStatus(r.status)] || 'border-slate-200 bg-white'
         return (
           <tr
             key={r.id}
-            className={`${s.classeLinha} ${r.prioridade ? 'border-l-4 border-red-500' : ''} hover:bg-slate-50`}
+            onClick={() => podeEditar && onEditar(r)}
+            className={`${s.classeLinha} ${r.prioridade ? 'border-l-4 border-red-500' : ''} ${
+              podeEditar ? 'cursor-pointer' : ''
+            } transition hover:bg-marca-50/40`}
           >
             {colunas.map((c) => (
               <td
                 key={c.chave}
-                className={`px-3 py-2 align-top ${c.className ?? ''} ${
+                className={`px-3 py-3 align-middle ${c.className ?? ''} ${
                   c.tipo === 'moeda' ? 'whitespace-nowrap text-right' : ''
                 }`}
               >
                 <Celula r={r} c={c} />
               </td>
             ))}
-            <td className="px-3 py-2.5 align-top">
+            <td className="px-3 py-3 align-middle">
               {r.prioridade && (
                 <span className="mb-1 inline-block rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
                   🔴 Urgente
                 </span>
               )}
-              {podeEditar && statusWorkflow && (
+              {podeEditar && statusWorkflow ? (
                 <select
                   value={r.status}
+                  onClick={(e) => e.stopPropagation()}
                   onChange={(e) => onStatus(r, e.target.value)}
-                  className="mb-1 block rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium outline-none focus:border-marca-600"
+                  className={`block w-full rounded-lg border px-2 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-marca-100 ${corSel}`}
                 >
                   {OPCOES_STATUS.map((op) => (
                     <option key={op} value={op}>
@@ -555,25 +574,34 @@ function FragmentoGrupo({
                     </option>
                   ))}
                 </select>
+              ) : (
+                <StatusBadge status={r.status} dataVencimento={r.data_vencimento} />
               )}
-              <StatusBadge status={r.status} dataVencimento={r.data_vencimento} />
             </td>
             {podeEditar && (
-              <td className="whitespace-nowrap px-3 py-2.5 text-right align-top">
-                <button
-                  onClick={() => onEditar(r)}
-                  className="rounded px-2 py-1 text-xs font-medium text-marca-700 hover:bg-marca-50 active:scale-95"
-                >
-                  Editar
-                </button>
-                {ehAdmin && (
+              <td className="whitespace-nowrap px-3 py-3 text-right align-middle">
+                <div className="flex items-center justify-end gap-1">
                   <button
-                    onClick={() => onExcluir(r)}
-                    className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 active:scale-95"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onEditar(r)
+                    }}
+                    className="rounded-lg bg-marca-50 px-3 py-2 text-xs font-semibold text-marca-700 transition hover:bg-marca-100 active:scale-95"
                   >
-                    Excluir
+                    Editar
                   </button>
-                )}
+                  {ehAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onExcluir(r)
+                      }}
+                      className="rounded-lg px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 active:scale-95"
+                    >
+                      Excluir
+                    </button>
+                  )}
+                </div>
               </td>
             )}
           </tr>
