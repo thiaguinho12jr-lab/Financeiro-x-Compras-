@@ -79,6 +79,7 @@ export default function TelaLancamentos({
   const [modalAberto, setModalAberto] = useState(false)
   const [emEdicao, setEmEdicao] = useState(null)
   const [verAnexos, setVerAnexos] = useState(null)
+  const [mostrarFiltros, setMostrarFiltros] = useState(false)
 
   const statusPadrao = statusWorkflow ? 'Pendente' : 'Pago'
 
@@ -275,8 +276,6 @@ export default function TelaLancamentos({
         qtdPagos={resumo.pagos}
         qtdReembolsados={resumo.reembolsados}
         qtdTotal={resumo.qtd}
-        statusAtivo={filtroStatus}
-        aoSelecionarStatus={setFiltroStatus}
         modoSimples={!statusWorkflow}
       />
 
@@ -293,26 +292,43 @@ export default function TelaLancamentos({
         <StatusTabs filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus} resumo={resumo} />
       )}
 
-      <FiltrosAvancados
-        rotuloResponsavel="Responsável"
-        responsavelOpcoes={responsavelOpcoes}
-        filtroResponsavel={filtroResponsavel}
-        setFiltroResponsavel={setFiltroResponsavel}
-        valorMin={valorMin}
-        setValorMin={setValorMin}
-        valorMax={valorMax}
-        setValorMax={setValorMax}
-        dataDe={dataDe}
-        setDataDe={setDataDe}
-        dataAte={dataAte}
-        setDataAte={setDataAte}
-        ordenar={ordenar}
-        setOrdenar={setOrdenar}
-        aoLimpar={limparAvancados}
-        algumAtivo={algumFiltroAvancado}
-      />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex-1">
+          <Filters busca={busca} setBusca={setBusca} />
+        </div>
+        <button
+          type="button"
+          onClick={() => setMostrarFiltros((v) => !v)}
+          className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition active:scale-95 ${
+            algumFiltroAvancado
+              ? 'border-marca-300 bg-marca-50 text-marca-700'
+              : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          ⚙️ Filtros avançados {algumFiltroAvancado && <span className="text-marca-600">•</span>}
+        </button>
+      </div>
 
-      <Filters busca={busca} setBusca={setBusca} />
+      {(mostrarFiltros || algumFiltroAvancado) && (
+        <FiltrosAvancados
+          rotuloResponsavel="Responsável"
+          responsavelOpcoes={responsavelOpcoes}
+          filtroResponsavel={filtroResponsavel}
+          setFiltroResponsavel={setFiltroResponsavel}
+          valorMin={valorMin}
+          setValorMin={setValorMin}
+          valorMax={valorMax}
+          setValorMax={setValorMax}
+          dataDe={dataDe}
+          setDataDe={setDataDe}
+          dataAte={dataAte}
+          setDataAte={setDataAte}
+          ordenar={ordenar}
+          setOrdenar={setOrdenar}
+          aoLimpar={limparAvancados}
+          algumAtivo={algumFiltroAvancado}
+        />
+      )}
 
       {erro && (
         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">
