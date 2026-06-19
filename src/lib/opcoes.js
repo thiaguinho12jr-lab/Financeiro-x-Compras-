@@ -29,6 +29,9 @@ export const LISTAS = {
   // Documentos para emissão de NF
   cnpj_cpf: [],
 
+  // Responsáveis que executam o pagamento (as "meninas" do financeiro)
+  pagador: [],
+
   // Fornecedores recorrentes (Mercado Livre já unificado)
   fornecedor: [
     'Mercado Livre',

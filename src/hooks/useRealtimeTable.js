@@ -64,7 +64,12 @@ export function useRealtimeTable(tabela) {
     }
   }, [tabela, recarregar])
 
-  return { registros, carregando, erro, recarregar }
+  // Atualização otimista: muda um registro na tela na hora (sem esperar o servidor)
+  const patchLocal = useCallback((id, mudancas) => {
+    setRegistros((atuais) => ordenar(atuais.map((r) => (r.id === id ? { ...r, ...mudancas } : r))))
+  }, [])
+
+  return { registros, carregando, erro, recarregar, patchLocal }
 }
 
 function ordenar(lista) {

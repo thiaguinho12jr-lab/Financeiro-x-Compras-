@@ -147,12 +147,19 @@ export default function Painel() {
     setModalAberto(true)
   }
 
-  async function mudarStatus(registro, novoStatus) {
-    await supabase
+  function mudarStatus(registro, novoStatus) {
+    const anterior = registro.status
+    sol.patchLocal(registro.id, { status: novoStatus }) // resposta instantânea
+    supabase
       .from('solicitacoes')
       .update({ status: novoStatus, updated_at: new Date().toISOString() })
       .eq('id', registro.id)
-    // a lista atualiza sozinha pelo realtime
+      .then(({ error }) => {
+        if (error) {
+          sol.patchLocal(registro.id, { status: anterior })
+          window.alert('Não foi possível atualizar: ' + error.message)
+        }
+      })
   }
 
   function abrirWhats(msg) {
@@ -217,8 +224,9 @@ export default function Painel() {
     l.push(`💵 ${formatarMoeda(r.valor_total)}`)
     if (r.codigo_glpi) l.push(`🔖 GLPI: ${r.codigo_glpi}`)
     if (r.fornecedor) l.push(`🏪 ${r.fornecedor}`)
-    if (r.empresa) l.push(`👤 Pagar a: ${r.empresa}`)
+    if (r.empresa) l.push(`👤 Pago por: ${r.empresa}`)
     if (r.cnpj_cpf) l.push(`🧾 ${r.cnpj_cpf}`)
+    if (r.pagador) l.push(`👩 Quem paga: ${r.pagador}`)
     if (r.data_vencimento) l.push(`📅 Pagar em: ${formatarData(r.data_vencimento)}`)
     const falta = pendenciasPagamento(r)
     if (falta.length) {
@@ -476,14 +484,15 @@ function PedidoItem({ r, aba, podeEditar, onClick, onCobrar, onStatus }) {
       </div>
 
       {/* Informações principais bem visíveis */}
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-5">
         <Campo rotulo="Fornecedor">{r.fornecedor || '—'}</Campo>
-        <Campo rotulo="Pagar a (PF)" alerta={!r.empresa && !r.cnpj_cpf}>
+        <Campo rotulo="Pago por (PF)" alerta={!r.empresa && !r.cnpj_cpf}>
           {r.empresa || (r.cnpj_cpf ? '—' : 'definir')}
         </Campo>
         <Campo rotulo="CNPJ / CPF" alerta={!r.empresa && !r.cnpj_cpf}>
           {r.cnpj_cpf || (r.empresa ? '—' : 'definir')}
         </Campo>
+        <Campo rotulo="Quem paga">{r.pagador || '—'}</Campo>
         <Campo rotulo="Data de pagamento" alerta={!r.data_vencimento}>
           {r.data_vencimento ? formatarData(r.data_vencimento) : 'definir'}
         </Campo>

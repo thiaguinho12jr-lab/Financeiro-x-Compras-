@@ -26,6 +26,7 @@ export const CAMPOS_SOLICITACOES = [
   { nome: 'forma_pagamento', rotulo: 'Forma de pagamento', tipo: 'datalist' },
   { nome: 'empresa', rotulo: 'Pago por (PF/CNPJ)', tipo: 'datalist' },
   { nome: 'cnpj_cpf', rotulo: 'CNPJ/CPF (NF)', tipo: 'datalist' },
+  { nome: 'pagador', rotulo: 'Quem vai pagar (responsável)', tipo: 'datalist' },
   { nome: 'data_vencimento', rotulo: 'Data de pagamento', tipo: 'date' },
   { nome: 'prioridade', rotulo: 'Prioridade', tipo: 'checkbox', largura: 'full' },
   { nome: 'status', rotulo: 'Status', tipo: 'select' },

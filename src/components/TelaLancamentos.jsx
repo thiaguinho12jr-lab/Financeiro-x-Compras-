@@ -63,7 +63,7 @@ export default function TelaLancamentos({
   campoResponsavel = 'empresa',
   comAnexos = false,
 }) {
-  const { registros, carregando, erro } = useRealtimeTable(tabela)
+  const { registros, carregando, erro, patchLocal } = useRealtimeTable(tabela)
   const { podeEditar, ehAdmin } = useAuth()
 
   const [busca, setBusca] = useState('')
@@ -229,11 +229,19 @@ export default function TelaLancamentos({
     setOrdenar('data')
   }
 
-  async function mudarStatus(registro, novoStatus) {
-    await supabase
+  function mudarStatus(registro, novoStatus) {
+    const anterior = registro.status
+    patchLocal(registro.id, { status: novoStatus }) // resposta instantânea
+    supabase
       .from(tabela)
       .update({ status: novoStatus, updated_at: new Date().toISOString() })
       .eq('id', registro.id)
+      .then(({ error }) => {
+        if (error) {
+          patchLocal(registro.id, { status: anterior })
+          window.alert('Não foi possível atualizar o status: ' + error.message)
+        }
+      })
   }
 
   async function excluir(registro) {
