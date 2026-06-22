@@ -32,10 +32,7 @@ export const LISTAS = {
   cnpj_cpf: [],
 
   // Responsáveis que executam o pagamento (as "meninas" do financeiro)
-  pagador: [],
-
-  // Quem solicitou a compra
-  solicitante: [
+  pagador: [
     'Carine Silveira',
     'Carliane Santos',
     'Daiane Moinhos',
@@ -49,6 +46,9 @@ export const LISTAS = {
     'Sinara Santos',
     'Sophia Goodwin',
   ],
+
+  // Quem solicitou a compra (preenchido conforme o uso)
+  solicitante: [],
 
   // Fornecedores recorrentes (Mercado Livre já unificado)
   fornecedor: [
@@ -84,7 +84,6 @@ export const LISTAS = {
     'BOLETO PARCELADO',
     'TRANSFERÊNCIA/ PIX',
     'CARTÃO',
-    'Pix',
   ],
 
   // Centros / setores de custo
