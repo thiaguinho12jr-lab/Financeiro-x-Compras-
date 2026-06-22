@@ -39,10 +39,24 @@ function ordenarUrgentes(lista) {
   return [...lista].sort((a, b) => (b.prioridade ? 1 : 0) - (a.prioridade ? 1 : 0))
 }
 
+function prefixoQtd(r) {
+  const q = Number(r.quantidade)
+  return !Number.isNaN(q) && q > 0 ? `${q}x ` : ''
+}
+
 function linhaItemWhats(r, i) {
-  let s = `${i}. ${r.prioridade ? '🔴 ' : ''}*${r.produto || 'Pedido'}* — *${formatarMoeda(r.valor_total)}*`
+  let s = `${i}. ${r.prioridade ? '🔴 ' : ''}*${prefixoQtd(r)}${r.produto || 'Pedido'}* — *${formatarMoeda(r.valor_total)}*`
   if (r.codigo_glpi) s += `  🔖 ${r.codigo_glpi}`
   return s
+}
+
+// Bloco padrão explicando o que o financeiro precisa definir.
+function blocoFalta() {
+  return [
+    '⚠️ *Faltam definir as informações para os pedidos:*',
+    '• *CPF/CNPJ* para emissão da nota fiscal',
+    '• *Data de pagamento*',
+  ]
 }
 
 function Cartao({ titulo, valor, detalhe, cor, anel }) {
@@ -178,11 +192,10 @@ export default function Painel() {
     l.push(`📌 *${pend.length} pedidos pendentes* — total *${formatarMoeda(totalValor)}*`)
     if (faltam.length) {
       l.push('')
-      l.push('⚠️ Os pedidos abaixo *precisam ser definidos*:')
-      l.push('Falta o *PF/CNPJ* (onde sai a NF) e/ou a *data de pagamento*.')
-      l.push('')
       faltam.slice(0, 30).forEach((r, i) => l.push(linhaItemWhats(r, i + 1)))
       if (faltam.length > 30) l.push(`_...e mais ${faltam.length - 30} pedido(s)_`)
+      l.push('')
+      l.push(...blocoFalta())
     }
     l.push('')
     l.push('Podem revisar e dar andamento, por favor? 🙏')
@@ -199,13 +212,14 @@ export default function Painel() {
       l.push('✅ Tudo certo! Nenhum pedido pendente de definição.')
       return l.join('\n')
     }
-    l.push('Olá! 👋 Os pedidos abaixo *precisam ser definidos* para irem ao pagamento.')
-    l.push('Falta o *PF/CNPJ* (onde sai a NF) e/ou a *data de pagamento*:')
+    l.push('Olá! 👋 Os pedidos abaixo precisam ser definidos para irem ao pagamento:')
     l.push('')
     faltam.forEach((r, i) => l.push(linhaItemWhats(r, i + 1)))
     const tot = faltam.reduce((s, r) => s + (Number(r.valor_total) || 0), 0)
     l.push('')
     l.push(`*Total: ${faltam.length} pedido(s) · ${formatarMoeda(tot)}*`)
+    l.push('')
+    l.push(...blocoFalta())
     l.push('')
     l.push('Conseguem definir, por favor? 🙏')
     return l.join('\n')
@@ -218,7 +232,7 @@ export default function Painel() {
     if (r.prioridade) l.push('🔴 *URGENTE — prioridade*')
     l.push('Falta definir um pagamento 👇')
     l.push('━━━━━━━━━━━━━━━')
-    l.push(`📦 *${r.produto || 'Pedido'}*`)
+    l.push(`📦 *${prefixoQtd(r)}${r.produto || 'Pedido'}*`)
     l.push(`💵 *${formatarMoeda(r.valor_total)}*`)
     if (r.codigo_glpi) l.push(`🔖 GLPI: ${r.codigo_glpi}`)
     if (r.fornecedor) l.push(`🏪 ${r.fornecedor}`)
