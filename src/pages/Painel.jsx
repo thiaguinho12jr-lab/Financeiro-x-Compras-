@@ -400,7 +400,7 @@ export default function Painel() {
             Nenhum pedido nesta situação.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 2xl:grid-cols-3">
             {lista.map((r) => (
               <PedidoItem
                 key={r.id}
