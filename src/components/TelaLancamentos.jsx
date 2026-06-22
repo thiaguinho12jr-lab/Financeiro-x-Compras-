@@ -182,7 +182,8 @@ export default function TelaLancamentos({
 
   // Resumo (cartões): conta tudo do período, total gasto exclui reembolsados
   const resumo = useMemo(() => {
-    let total = 0
+    let total = 0 // somente PAGO ("gasto" real)
+    let pendenteValor = 0 // o que ainda falta pagar (pendente + enviado)
     let pendentes = 0
     let enviados = 0
     let pagos = 0
@@ -190,13 +191,20 @@ export default function TelaLancamentos({
     for (const r of base) {
       const v = Number(r.valor_total) || 0
       const g = grupoStatus(r.status)
-      if (g === 'pago') pagos += 1
-      else if (g === 'enviado') enviados += 1
-      else if (g === 'reembolsado') reembolsados += 1
-      else pendentes += 1
-      if (g !== 'reembolsado') total += v
+      if (g === 'pago') {
+        pagos += 1
+        total += v
+      } else if (g === 'enviado') {
+        enviados += 1
+        pendenteValor += v
+      } else if (g === 'reembolsado') {
+        reembolsados += 1
+      } else {
+        pendentes += 1
+        pendenteValor += v
+      }
     }
-    return { total, pendentes, enviados, pagos, reembolsados, qtd: base.length }
+    return { total, pendenteValor, pendentes, enviados, pagos, reembolsados, qtd: base.length }
   }, [base])
 
   // Agrupamento por mês com resumo (gasto líquido + quebra por status)
@@ -208,13 +216,13 @@ export default function TelaLancamentos({
       map.get(mes).push(r)
     }
     const arr = [...map.entries()].map(([mes, rows]) => {
-      let gasto = 0
+      let gasto = 0 // só PAGO
       const ps = { pendente: 0, enviado: 0, pago: 0, reembolsado: 0 }
       for (const r of rows) {
         const v = Number(r.valor_total) || 0
         const g = grupoStatus(r.status)
         ps[g] += v
-        if (g !== 'reembolsado') gasto += v
+        if (g === 'pago') gasto += v
       }
       return { mes, rows, count: rows.length, gasto, ps }
     })
@@ -288,15 +296,28 @@ export default function TelaLancamentos({
         <div className="flex flex-wrap items-end justify-between gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Total gasto no período
+              Total pago no período
             </p>
-            <p className="mt-0.5 text-3xl font-extrabold text-slate-800">
+            <p className="mt-0.5 text-3xl font-extrabold text-emerald-700">
               {formatarMoeda(resumo.total)}
             </p>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {resumo.pagos} pago{resumo.pagos === 1 ? '' : 's'} · só conta quando marcado como pago
+            </p>
           </div>
-          <p className="text-sm text-slate-400">
-            {resumo.qtd} {resumo.qtd === 1 ? 'item' : 'itens'} · exceto reembolsados
-          </p>
+          {resumo.pendenteValor > 0 && (
+            <div className="text-right">
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
+                Ainda a pagar
+              </p>
+              <p className="mt-0.5 text-xl font-bold text-amber-600">
+                {formatarMoeda(resumo.pendenteValor)}
+              </p>
+              <p className="text-xs text-slate-400">
+                {resumo.pendentes + resumo.enviados} pendente(s)
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <SummaryCards
@@ -443,7 +464,7 @@ export default function TelaLancamentos({
                     {grupo.mes === 'sem-data' ? 'Sem data' : rotuloMes(grupo.mes)}
                   </h3>
                   <span className="text-xs font-semibold text-slate-600">
-                    {grupo.count} · Gasto {formatarMoeda(grupo.gasto)}
+                    {grupo.count} · Pago {formatarMoeda(grupo.gasto)}
                   </span>
                 </div>
                 <ResumoMes ps={grupo.ps} />
@@ -631,7 +652,7 @@ function FragmentoGrupo({
               {grupo.mes === 'sem-data' ? 'Sem data' : rotuloMes(grupo.mes)}
             </span>
             <span className="text-xs font-semibold text-slate-600">
-              {grupo.count} itens · Gasto {formatarMoeda(grupo.gasto)}
+              {grupo.count} itens · Pago {formatarMoeda(grupo.gasto)}
             </span>
           </div>
           <ResumoMes ps={grupo.ps} />
