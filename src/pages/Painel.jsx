@@ -41,23 +41,6 @@ function ordenarUrgentes(lista) {
   return [...lista].sort((a, b) => (b.prioridade ? 1 : 0) - (a.prioridade ? 1 : 0))
 }
 
-// Ordena uma coluna do kanban: pendentes -> urgentes e "falta definir" primeiro.
-function ordenarColuna(arr, chave) {
-  const a = [...arr]
-  if (chave === 'pendente') {
-    a.sort((x, y) => {
-      const u = (y.prioridade ? 1 : 0) - (x.prioridade ? 1 : 0)
-      if (u !== 0) return u
-      const p = (pedidoCompleto(x) ? 1 : 0) - (pedidoCompleto(y) ? 1 : 0)
-      if (p !== 0) return p
-      return (x.data_vencimento || x.data || '').localeCompare(y.data_vencimento || y.data || '')
-    })
-  } else {
-    a.sort((x, y) => (y.data || '').localeCompare(x.data || ''))
-  }
-  return a
-}
-
 function prefixoQtd(r) {
   const q = Number(r.quantidade)
   return !Number.isNaN(q) && q > 0 ? `${q}x ` : ''
@@ -327,7 +310,7 @@ export default function Painel() {
         />
       </div>
 
-      {/* Pedidos em quadro (kanban) por status */}
+      {/* Pedidos separados por status (abas) */}
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-800">Pedidos (Solicitações)</h3>
@@ -336,51 +319,70 @@ export default function Painel() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {[
-            { chave: 'pendente', rotulo: 'Pendente', dot: 'bg-amber-500', total: comb.pendente.total },
-            { chave: 'enviado', rotulo: 'Enviado p/ pagamento', dot: 'bg-blue-500', total: comb.enviado.total },
-            { chave: 'pago', rotulo: 'Pago', dot: 'bg-emerald-500', total: comb.pago.total },
-          ].map((col) => {
-            const itens = ordenarColuna(porStatus[col.chave], col.chave)
+        {/* Abas de status */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          {ABAS.map((a) => {
+            const qtd = porStatus[a.chave].length
+            const ativo = aba === a.chave
             return (
-              <div key={col.chave} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${col.dot}`} />
-                    <span className="text-sm font-bold text-slate-700">{col.rotulo}</span>
-                    <span className="text-xs text-slate-400">({itens.length})</span>
-                  </div>
-                  <span className="text-xs font-semibold text-slate-500">
-                    {formatarMoeda(col.total)}
-                  </span>
-                </div>
-                {itens.length === 0 ? (
-                  <p className="py-6 text-center text-xs text-slate-400">Nenhum</p>
-                ) : (
-                  <div className="max-h-[36rem] space-y-2 overflow-y-auto pr-1 scroll-suave">
-                    {itens.slice(0, 60).map((r) => (
-                      <PedidoItem
-                        key={r.id}
-                        r={r}
-                        aba={col.chave}
-                        podeEditar={podeEditar}
-                        onClick={() => abrirDefinicao(r)}
-                        onCobrar={() => abrirWhats(msgItem(r))}
-                        onStatus={(novo) => mudarStatus(r, novo)}
-                      />
-                    ))}
-                    {itens.length > 60 && (
-                      <p className="pt-1 text-center text-xs text-slate-400">
-                        +{itens.length - 60} — abra a tela completa
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+              <button
+                key={a.chave}
+                type="button"
+                onClick={() => setAba(a.chave)}
+                className={[
+                  'rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95',
+                  ativo ? a.ativo + ' shadow-sm' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50',
+                ].join(' ')}
+              >
+                {a.rotulo} <span className={ativo ? 'opacity-90' : 'text-slate-400'}>({qtd})</span>
+              </button>
             )
           })}
         </div>
+
+        {aba === 'pendente' && (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {[
+              { k: 'todos', r: `Todos (${porStatus.pendente.length})` },
+              { k: 'prontos', r: `✅ Prontos p/ enviar (${definicao.def.qtd})` },
+              { k: 'falta', r: `⏳ Falta definir (${definicao.falta.qtd})` },
+            ].map((s) => (
+              <button
+                key={s.k}
+                type="button"
+                onClick={() => setSubPendente(s.k)}
+                className={[
+                  'rounded-full px-3 py-1.5 text-xs font-semibold transition active:scale-95',
+                  subPendente === s.k
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50',
+                ].join(' ')}
+              >
+                {s.r}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {lista.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-400">
+            Nenhum pedido nesta situação.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 2xl:grid-cols-3">
+            {lista.map((r) => (
+              <PedidoItem
+                key={r.id}
+                r={r}
+                aba={aba}
+                podeEditar={podeEditar}
+                onClick={() => abrirDefinicao(r)}
+                onCobrar={() => abrirWhats(msgItem(r))}
+                onStatus={(novo) => mudarStatus(r, novo)}
+              />
+            ))}
+          </div>
+        )}
       </div>
         </>
       )}
@@ -421,24 +423,24 @@ function PedidoItem({ r, aba, podeEditar, onClick, onCobrar, onStatus }) {
       onClick={podeEditar ? onClick : undefined}
       role={podeEditar ? 'button' : undefined}
       className={[
-        'block w-full rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm',
+        'block w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm',
         corBorda,
         podeEditar ? 'cursor-pointer transition hover:shadow active:scale-[0.99]' : '',
       ].join(' ')}
     >
       {/* Linha 1: produto + valor */}
-      <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 truncate text-sm font-bold text-slate-900">
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 truncate text-base font-bold text-slate-900">
           {r.prioridade && <span className="mr-1 text-red-600">🔴</span>}
           {r.produto || '—'}
         </p>
-        <p className="whitespace-nowrap text-base font-extrabold tabular-nums text-slate-900">
+        <p className="whitespace-nowrap text-lg font-extrabold tabular-nums text-slate-900">
           {formatarMoeda(r.valor_total)}
         </p>
       </div>
 
       {/* Linha 2: infos compactas (só as preenchidas) */}
-      <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-xs text-slate-500">
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-slate-500">
         <span className="text-slate-400">🗓 {formatarData(r.data)}</span>
         {r.fornecedor && <span>🏪 {r.fornecedor}</span>}
         {r.empresa && <span>👤 {r.empresa}</span>}
