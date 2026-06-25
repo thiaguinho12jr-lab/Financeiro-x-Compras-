@@ -119,6 +119,16 @@ const NORMALIZADORES = {
 // Valores que nunca devem aparecer como sugestão (por chave canônica).
 const EXCLUIR = new Set(['brunon'])
 
+// Únicos campos que mostram sugestões automáticas. Todos os outros
+// (Fornecedor, Centro de custo, Local de entrega, Cidade/UF, CNPJ/CPF...)
+// são digitados manualmente, sem lista suspensa.
+const CAMPOS_COM_SUGESTAO = new Set([
+  'empresa', // Pago por (PF/CNPJ) — Solicitações
+  'conta_pagamento', // Pago por (PF/CNPJ) — Fundo de Caixa
+  'pagador', // Quem vai pagar (responsável)
+  'forma_pagamento', // Forma de pagamento
+])
+
 // Chave para comparar valores ignorando acento, maiúsculas, espaços e pontuação.
 // "DELL" e "Dell", "PF IGOR" e "PF - Igor", "Flex form" e "Flexform" => mesma chave.
 function chaveCanonica(v) {
@@ -136,6 +146,9 @@ function chaveCanonica(v) {
  * inteligente (acento/maiúscula/espaço) e ordena.
  */
 export function montarSugestoes(nomeCampo, registros) {
+  // Campos sem sugestão: digitação 100% manual (retorna lista vazia).
+  if (!CAMPOS_COM_SUGESTAO.has(nomeCampo)) return []
+
   const norm = NORMALIZADORES[nomeCampo]
   const mapa = new Map() // chaveCanonica -> texto exibido (1ª ocorrência vence)
 
