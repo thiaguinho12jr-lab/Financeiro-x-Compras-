@@ -12,6 +12,7 @@ import {
   alertaVencimento,
   pendenciasPagamento,
   pedidoCompleto,
+  OPCOES_STATUS,
 } from '../lib/format.js'
 import { linkWhatsApp } from '../lib/whatsapp.js'
 import { montarSugestoes } from '../lib/opcoes.js'
@@ -352,12 +353,19 @@ export default function Painel() {
                     <th className="px-4 py-3 font-semibold">Data</th>
                     <th className="px-4 py-3 font-semibold">Produto</th>
                     <th className="px-3 py-3 text-center font-semibold">Qtd</th>
-                    <th className="px-4 py-3 font-semibold">Forma pgto</th>
+                    <th className="px-4 py-3 text-right font-semibold">Valor total</th>
+                    <th className="px-4 py-3 text-right font-semibold">Valor unit.</th>
+                    <th className="px-4 py-3 text-right font-semibold">Frete</th>
+                    <th className="px-4 py-3 font-semibold">Motivo</th>
+                    <th className="px-4 py-3 font-semibold">Centro de custo</th>
+                    <th className="px-4 py-3 font-semibold">Local de entrega</th>
+                    <th className="px-4 py-3 font-semibold">Fornecedor</th>
+                    <th className="px-4 py-3 font-semibold">Cidade/UF</th>
+                    <th className="px-4 py-3 font-semibold">Forma de pagamento</th>
+                    <th className="px-4 py-3 font-semibold">Pago por (PF/CNPJ)</th>
+                    <th className="px-4 py-3 font-semibold">Data de pagamento</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Pago por</th>
-                    <th className="px-4 py-3 font-semibold">Vencimento</th>
-                    <th className="px-4 py-3 text-right font-semibold">Valor (R$)</th>
-                    <th className="px-4 py-3 text-center font-semibold">Ações</th>
+                    <th className="px-3 py-3 text-center font-semibold">Urgência</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -396,12 +404,29 @@ export default function Painel() {
   )
 }
 
-/** Linha da tabela de pedidos (layout enxuto, estilo planilha). */
+const COR_STATUS_SELECT = {
+  pendente: 'bg-amber-50 text-amber-700 ring-amber-200',
+  enviado: 'bg-blue-50 text-blue-700 ring-blue-200',
+  pago: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  reembolsado: 'bg-violet-50 text-violet-700 ring-violet-200',
+}
+
+/** Célula de texto da planilha: mostra "—" discreto quando vazio. */
+function Cel({ valor, classe = 'text-slate-600', max = '12rem' }) {
+  if (valor === null || valor === undefined || valor === '' || valor === '-')
+    return <span className="text-slate-300">—</span>
+  return (
+    <span className={`block truncate ${classe}`} style={{ maxWidth: max }} title={String(valor)}>
+      {valor}
+    </span>
+  )
+}
+
+/** Linha da tabela de pedidos — espelha as colunas da planilha (Excel). */
 function LinhaPedido({ r, aba, podeEditar, onClick, onStatus }) {
-  const falta = pendenciasPagamento(r)
-  const pronto = falta.length === 0
-  const alerta = alertaVencimento(r)
   const pagoPor = r.empresa || r.cnpj_cpf
+  const moeda = (v) =>
+    v === null || v === undefined || v === '' ? <span className="text-slate-300">—</span> : formatarMoeda(v)
 
   return (
     <tr
@@ -415,27 +440,56 @@ function LinhaPedido({ r, aba, podeEditar, onClick, onStatus }) {
       {/* Data */}
       <td className="whitespace-nowrap px-4 py-3 text-slate-500">{formatarData(r.data)}</td>
 
-      {/* Produto (+ fornecedor / anexos) */}
+      {/* Produto */}
       <td className="px-4 py-3">
-        <div className="flex items-center gap-1.5 font-semibold text-marca-700">
-          {r.prioridade && <span className="text-red-600">🔴</span>}
-          <span className="block max-w-[16rem] truncate" title={r.produto || ''}>
-            {r.produto || '—'}
-          </span>
-        </div>
-        {(r.fornecedor || (Array.isArray(r.anexos) && r.anexos.length > 0)) && (
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
-            {r.fornecedor && <span className="truncate">🏪 {r.fornecedor}</span>}
-            {Array.isArray(r.anexos) && r.anexos.length > 0 && (
-              <span className="text-marca-700">📎 {r.anexos.length}</span>
-            )}
-          </div>
-        )}
+        <span className="block max-w-[18rem] truncate font-semibold text-marca-700" title={r.produto || ''}>
+          {r.produto || '—'}
+        </span>
       </td>
 
       {/* Quantidade */}
       <td className="whitespace-nowrap px-3 py-3 text-center tabular-nums text-slate-600">
-        {Number(r.quantidade) > 0 ? r.quantidade : '—'}
+        {Number(r.quantidade) > 0 ? r.quantidade : <span className="text-slate-300">—</span>}
+      </td>
+
+      {/* Valor total */}
+      <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums text-slate-800">
+        {moeda(r.valor_total)}
+      </td>
+
+      {/* Valor unitário */}
+      <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-slate-600">
+        {moeda(r.valor_unitario)}
+      </td>
+
+      {/* Frete */}
+      <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-slate-600">
+        {moeda(r.frete)}
+      </td>
+
+      {/* Motivo */}
+      <td className="px-4 py-3">
+        <Cel valor={r.motivo} max="18rem" />
+      </td>
+
+      {/* Centro de custo */}
+      <td className="px-4 py-3">
+        <Cel valor={r.centro_custo} max="10rem" />
+      </td>
+
+      {/* Local de entrega */}
+      <td className="px-4 py-3">
+        <Cel valor={r.local_entrega} max="10rem" />
+      </td>
+
+      {/* Fornecedor */}
+      <td className="px-4 py-3">
+        <Cel valor={r.fornecedor} max="10rem" />
+      </td>
+
+      {/* Cidade/UF */}
+      <td className="px-4 py-3">
+        <Cel valor={r.cidade_estado} max="9rem" />
       </td>
 
       {/* Forma de pagamento */}
@@ -449,36 +503,16 @@ function LinhaPedido({ r, aba, podeEditar, onClick, onStatus }) {
         )}
       </td>
 
-      {/* Status (+ falta / alerta) */}
-      <td className="whitespace-nowrap px-4 py-3">
-        <div className="flex flex-col items-start gap-1">
-          <StatusBadge status={r.status} dataVencimento={r.data_vencimento} />
-          {aba === 'pendente' && !pronto && (
-            <span className="text-[11px] font-semibold text-amber-600">⏳ Falta: {falta.join(' · ')}</span>
-          )}
-          {alerta && (
-            <span
-              className={`text-[11px] font-bold ${
-                alerta.tipo === 'vencido' ? 'text-red-600' : 'text-amber-600'
-              }`}
-            >
-              ⏰ {alerta.label}
-            </span>
-          )}
-        </div>
-      </td>
-
-      {/* Pago por (PF/CNPJ) + quem paga */}
+      {/* Pago por (PF/CNPJ) */}
       <td className="whitespace-nowrap px-4 py-3">
         {pagoPor ? (
           <span className="text-slate-700">{pagoPor}</span>
         ) : (
           <span className="font-medium text-red-500">a definir</span>
         )}
-        {r.pagador && <div className="text-xs text-slate-400">💳 {r.pagador}</div>}
       </td>
 
-      {/* Vencimento */}
+      {/* Data de pagamento */}
       <td className="whitespace-nowrap px-4 py-3">
         {r.data_vencimento ? (
           <span className="font-medium text-blue-600">{formatarData(r.data_vencimento)}</span>
@@ -487,51 +521,36 @@ function LinhaPedido({ r, aba, podeEditar, onClick, onStatus }) {
         )}
       </td>
 
-      {/* Valor */}
-      <td className="whitespace-nowrap px-4 py-3 text-right text-[15px] font-bold tabular-nums text-emerald-700">
-        {formatarMoeda(r.valor_total)}
+      {/* Status (dropdown, como na planilha) */}
+      <td className="whitespace-nowrap px-4 py-3">
+        <select
+          value={OPCOES_STATUS.includes(r.status) ? r.status : 'Pendente'}
+          disabled={!podeEditar}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => onStatus(e.target.value)}
+          className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 focus:outline-none focus:ring-2 ${
+            COR_STATUS_SELECT[grupoStatus(r.status)] || 'bg-slate-50 text-slate-600 ring-slate-200'
+          } ${podeEditar ? 'cursor-pointer' : 'cursor-default'}`}
+        >
+          {OPCOES_STATUS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
       </td>
 
-      {/* Ações */}
-      <td className="whitespace-nowrap px-4 py-3">
-        <div className="flex items-center justify-center gap-1.5">
-          {podeEditar && aba === 'pendente' && pronto && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onStatus('Enviado')
-              }}
-              title="Enviar para pagamento"
-              className="whitespace-nowrap rounded-md bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-blue-700 active:scale-95"
-            >
-              Enviar →
-            </button>
-          )}
-          {podeEditar && aba === 'enviado' && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onStatus('Pago')
-              }}
-              title="Marcar como pago"
-              className="whitespace-nowrap rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700 active:scale-95"
-            >
-              💰 Pago
-            </button>
-          )}
-          {podeEditar && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onClick()
-              }}
-              title="Editar / definir"
-              className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-marca-700"
-            >
-              ✏️
-            </button>
-          )}
-        </div>
+      {/* Urgência */}
+      <td className="whitespace-nowrap px-3 py-3 text-center">
+        {r.prioridade ? (
+          <span className="rounded-md bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
+            SIM
+          </span>
+        ) : (
+          <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600 ring-1 ring-blue-100">
+            NÃO
+          </span>
+        )}
       </td>
     </tr>
   )
