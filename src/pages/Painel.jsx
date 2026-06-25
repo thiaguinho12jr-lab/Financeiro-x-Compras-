@@ -467,7 +467,6 @@ function PedidoItem({ r, aba, podeEditar, onClick, onStatus }) {
         <Campo rotulo="Pago por (PF/CNPJ)" valor={r.empresa} faltando={faltaPfCnpj} />
         <Campo rotulo="Documento (NF)" valor={r.cnpj_cpf} />
         <Campo rotulo="Quem paga" valor={r.pagador} />
-        {r.solicitante && <Campo rotulo="Solicitante" valor={r.solicitante} />}
         {r.codigo_glpi && <Campo rotulo="GLPI" valor={r.codigo_glpi} />}
       </dl>
 
