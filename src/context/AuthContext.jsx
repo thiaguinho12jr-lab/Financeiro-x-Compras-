@@ -8,37 +8,59 @@ export function AuthProvider({ children }) {
   const [perfil, setPerfil] = useState(null) // { id, email, nome, role }
   const [carregando, setCarregando] = useState(true)
 
-  // Busca o perfil (papel/nome) do usuário logado na tabela public.profiles
+  // Busca o perfil (papel/nome) do usuário logado na tabela public.profiles.
+  // Tem um limite de tempo (8s): se o Supabase não responder (ex.: projeto
+  // pausado/instável), não trava a tela — segue sem perfil.
   const carregarPerfil = useCallback(async (userId) => {
     if (!userId) {
       setPerfil(null)
       return
     }
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, email, nome, role')
-      .eq('id', userId)
-      .single()
-
-    if (error) {
+    try {
+      const consulta = supabase
+        .from('profiles')
+        .select('id, email, nome, role')
+        .eq('id', userId)
+        .single()
+      const limite = new Promise((_, rej) =>
+        setTimeout(() => rej(new Error('Tempo esgotado ao buscar perfil')), 8000)
+      )
+      const { data, error } = await Promise.race([consulta, limite])
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('Erro ao carregar perfil:', error.message)
+        setPerfil(null)
+      } else {
+        setPerfil(data)
+      }
+    } catch (e) {
       // eslint-disable-next-line no-console
-      console.error('Erro ao carregar perfil:', error.message)
+      console.error('Perfil não carregou a tempo:', e.message)
       setPerfil(null)
-    } else {
-      setPerfil(data)
     }
   }, [])
 
   useEffect(() => {
     let ativo = true
 
+    // Failsafe: libera a tela em no máximo 10s mesmo se algo travar.
+    const destravar = setTimeout(() => ativo && setCarregando(false), 10000)
+
     // Sessão inicial
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!ativo) return
-      setSession(session)
-      await carregarPerfil(session?.user?.id)
-      setCarregando(false)
-    })
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        if (!ativo) return
+        setSession(session)
+        await carregarPerfil(session?.user?.id)
+      })
+      .catch((e) => {
+        // eslint-disable-next-line no-console
+        console.error('Erro ao obter sessão:', e?.message)
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false)
+      })
 
     // Escuta mudanças de login/logout
     const {
@@ -51,6 +73,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       ativo = false
+      clearTimeout(destravar)
       subscription.unsubscribe()
     }
   }, [carregarPerfil])
