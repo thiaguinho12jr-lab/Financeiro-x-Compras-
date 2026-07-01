@@ -61,12 +61,13 @@ function blocoFalta() {
   ]
 }
 
-function Cartao({ titulo, valor, detalhe, cor, anel }) {
+function Cartao({ titulo, valor, detalhe, cor, acento }) {
   return (
-    <div className={`rounded-2xl border-2 ${anel} bg-white p-5 shadow-sm`}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{titulo}</p>
-      <p className={`mt-2 text-2xl font-extrabold ${cor}`}>{valor}</p>
-      {detalhe && <p className="mt-1 text-xs text-slate-500">{detalhe}</p>}
+    <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
+      <span className={`absolute inset-y-0 left-0 w-1 ${acento}`} aria-hidden />
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{titulo}</p>
+      <p className={`mt-1.5 text-2xl font-extrabold tabular-nums ${cor}`}>{valor}</p>
+      {detalhe && <p className="mt-1 text-xs text-slate-400">{detalhe}</p>}
     </div>
   )
 }
@@ -267,21 +268,21 @@ export default function Painel() {
           valor={formatarMoeda(comb.pendente.total)}
           detalhe={`${comb.pendente.qtd} aguardando`}
           cor="text-amber-600"
-          anel="border-amber-200"
+          acento="bg-amber-400"
         />
         <Cartao
           titulo="Enviado"
           valor={formatarMoeda(comb.enviado.total)}
           detalhe={`${comb.enviado.qtd} enviado(s)`}
           cor="text-blue-600"
-          anel="border-blue-200"
+          acento="bg-blue-500"
         />
         <Cartao
           titulo="Pago"
           valor={formatarMoeda(comb.pago.total)}
           detalhe={`${comb.pago.qtd} quitado(s)`}
           cor="text-emerald-600"
-          anel="border-emerald-200"
+          acento="bg-emerald-500"
         />
       </div>
 
